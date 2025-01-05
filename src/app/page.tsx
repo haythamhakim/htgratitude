@@ -38,7 +38,7 @@ export default function Home() {
         const gratitudeHToday = await databases.listDocuments(
           "677aa240003aea2c9bca",
           "677aa24a000d3fd012f6",
-          [Query.equal("date", formattedDate), Query.equal("user", "haytham")]
+          [Query.equal("date", formattedDate), Query.equal("user", "haytham2")]
         );
 
         const gratitudeMToday = await databases.listDocuments(
@@ -47,7 +47,7 @@ export default function Home() {
           [Query.equal("date", formattedDate), Query.equal("user", "tasneem")]
         );
         setHaythamStreak(
-          gratitude.documents.filter((doc: any) => doc.user === "haytham")
+          gratitude.documents.filter((doc: any) => doc.user === "haytham2")
             .length
         );
         setTasneemStreak(
@@ -63,16 +63,16 @@ export default function Home() {
   }, [isPinVerified, formattedDate]);
 
   const handleSubmit = async (
-    person: "haytham" | "tasneem",
+    person: "haytham2" | "tasneem",
     gratitude: any[]
   ) => {
-    if (person === "haytham") {
+    if (person === "haytham2") {
       const id = ID.unique();
       const gratitudeId = id;
       const gratitudeHToday = await databases.listDocuments(
         "677aa240003aea2c9bca",
         "677aa24a000d3fd012f6",
-        [Query.equal("date", formattedDate), Query.equal("user", "haytham")]
+        [Query.equal("date", formattedDate), Query.equal("user", "haytham2")]
       );
       if (gratitudeHToday.documents.length > 0) {
         await databases.updateDocument(
@@ -87,7 +87,7 @@ export default function Home() {
           "677aa24a000d3fd012f6",
           gratitudeId,
           {
-            user: "haytham",
+            user: "haytham2",
             date: formattedDate,
             id: gratitudeId,
             grateful: gratitude,
@@ -177,7 +177,7 @@ export default function Home() {
                             onSubmit={(value) => {
                               const newGratitude = [...haythamTodayGratitude];
                               newGratitude[index] = value;
-                              handleSubmit("haytham", newGratitude);
+                              handleSubmit("haytham2", newGratitude);
                               setEditingHaytham(null);
                               setHaythamTodayGratitude(newGratitude);
                             }}
@@ -256,7 +256,7 @@ export default function Home() {
                     <button
                       onClick={() => {
                         alert(JSON.stringify(haythamGratitude.current));
-                        handleSubmit("haytham", haythamGratitude.current);
+                        handleSubmit("haytham2", haythamGratitude.current);
                       }}
                       className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-md shadow-sm transition-colors"
                     >
