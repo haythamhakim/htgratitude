@@ -1,113 +1,391 @@
-import Image from 'next/image'
+"use client";
+
+import GratitudeInput from "@/components/gratitudeInput";
+import PinEntry from "@/components/pinVerification";
+import { ID, Query } from "appwrite";
+import { useEffect, useRef, useState } from "react";
+import ReactConfetti from "react-confetti";
+import { Toaster, toast } from "react-hot-toast";
+import { databases } from "./appwrite/config";
 
 export default function Home() {
+  const [isPinVerified, setIsPinVerified] = useState(false);
+  const [haythamStreak, setHaythamStreak] = useState(0);
+  const [mollyStreak, setMollyStreak] = useState(0);
+  const [editingHaytham, setEditingHaytham] = useState<number | null>(null);
+  const [editingMolly, setEditingMolly] = useState<number | null>(null);
+  const today = new Date();
+  const [haythamTodayGratitude, setHaythamTodayGratitude] = useState<any[]>([]);
+  const [mollyTodayGratitude, setMollyTodayGratitude] = useState<any[]>([]);
+  const haythamGratitude = useRef<any[]>([]);
+  const mollyGratitude = useRef<any[]>([]);
+  const formattedDate = today.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    if (isPinVerified) {
+      const retrieveData = async () => {
+        const gratitude = await databases.listDocuments(
+          "677aa240003aea2c9bca",
+          "677aa24a000d3fd012f6"
+        );
+
+        const gratitudeHToday = await databases.listDocuments(
+          "677aa240003aea2c9bca",
+          "677aa24a000d3fd012f6",
+          [Query.equal("date", formattedDate), Query.equal("user", "haytham")]
+        );
+
+        const gratitudeMToday = await databases.listDocuments(
+          "677aa240003aea2c9bca",
+          "677aa24a000d3fd012f6",
+          [Query.equal("date", formattedDate), Query.equal("user", "molly")]
+        );
+        setHaythamStreak(
+          gratitude.documents.filter((doc: any) => doc.user === "haytham")
+            .length
+        );
+        setMollyStreak(
+          gratitude.documents.filter((doc: any) => doc.user === "molly").length
+        );
+
+        setHaythamTodayGratitude(gratitudeHToday.documents[0].grateful);
+        setMollyTodayGratitude(gratitudeMToday.documents[0].grateful);
+      };
+      retrieveData();
+    }
+  }, [isPinVerified, formattedDate]);
+
+  const handleSubmit = async (
+    person: "haytham" | "molly",
+    gratitude: any[]
+  ) => {
+    if (person === "haytham") {
+      const id = ID.unique();
+      const gratitudeId = id;
+      const gratitudeHToday = await databases.listDocuments(
+        "677aa240003aea2c9bca",
+        "677aa24a000d3fd012f6",
+        [Query.equal("date", formattedDate), Query.equal("user", "haytham")]
+      );
+      if (gratitudeHToday.documents.length > 0) {
+        await databases.updateDocument(
+          "677aa240003aea2c9bca",
+          "677aa24a000d3fd012f6",
+          gratitudeHToday.documents[0].id,
+          { grateful: gratitude }
+        );
+      } else {
+        await databases.createDocument(
+          "677aa240003aea2c9bca",
+          "677aa24a000d3fd012f6",
+          gratitudeId,
+          {
+            user: "haytham",
+            date: formattedDate,
+            id: gratitudeId,
+            grateful: gratitude,
+          }
+        );
+      }
+      setShowConfetti(true);
+      toast.success("Haytham's gratitude journal entry recorded! 🦅", {
+        duration: 3000,
+      });
+      setTimeout(() => setShowConfetti(false), 5000);
+    } else {
+      const id = ID.unique();
+      const gratitudeId = id;
+      const gratitudeMToday = await databases.listDocuments(
+        "677aa240003aea2c9bca",
+        "677aa24a000d3fd012f6",
+        [Query.equal("date", formattedDate), Query.equal("user", "molly")]
+      );
+      if (gratitudeMToday.documents.length > 0) {
+        await databases.updateDocument(
+          "677aa240003aea2c9bca",
+          "677aa24a000d3fd012f6",
+          gratitudeMToday.documents[0].id,
+          { grateful: gratitude }
+        );
+      } else {
+        await databases.createDocument(
+          "677aa240003aea2c9bca",
+          "677aa24a000d3fd012f6",
+          gratitudeId,
+          {
+            user: "molly",
+            date: formattedDate,
+            id: gratitudeId,
+            grateful: gratitude,
+          }
+        );
+      }
+      setShowConfetti(true);
+      toast.success("Molly's gratitude journal entry recorded! 🌸", {
+        duration: 3000,
+      });
+      setTimeout(() => setShowConfetti(false), 5000);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <>
+      {showConfetti && <ReactConfetti recycle={false} numberOfPieces={500} />}
+      <Toaster position="top-center" />
+      {!isPinVerified && <PinEntry onVerify={() => setIsPinVerified(true)} />}
+      {isPinVerified && (
+        <main className="min-h-screen flex flex-col">
+          <div className="w-full bg-gray-50 p-4 text-center border-b">
+            <h2 className="text-2xl font-semibold text-gray-700">
+              {formattedDate}
+            </h2>
+          </div>
+          <div className="flex flex-1 flex-col lg:flex-row">
+            {/* Haytham's Side */}
+            <div className="flex-1 bg-blue-100 p-8">
+              <div className="flex justify-center items-center gap-4 mb-8">
+                <h1 className="text-4xl font-bold text-center text-gray-700">
+                  Haytham 🦅
+                </h1>
+                <div className="bg-blue-200 px-3 py-1 rounded-full">
+                  <span className="text-sm font-medium">
+                    🔥 {haythamStreak} day streak
+                  </span>
+                </div>
+              </div>
+              {haythamTodayGratitude.length > 0 ? (
+                <div className="space-y-4 max-w-md mx-auto">
+                  <h3 className="text-center text-gray-700 font-medium">
+                    Today&apos;s Gratitude (Click to Edit)
+                  </h3>
+                  {haythamTodayGratitude.map((item: string, index: number) => (
+                    <div key={index}>
+                      {editingHaytham === index ? (
+                        <div className="space-y-2">
+                          <GratitudeInput
+                            id={`haytham-edit-${index}`}
+                            placeholder={`Edit gratitude #${index + 1}`}
+                            colorScheme="blue"
+                            defaultValue={item}
+                            onSubmit={(value) => {
+                              const newGratitude = [...haythamTodayGratitude];
+                              newGratitude[index] = value;
+                              handleSubmit("haytham", newGratitude);
+                              setEditingHaytham(null);
+                              setHaythamTodayGratitude(newGratitude);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                          onClick={() => setEditingHaytham(index)}
+                        >
+                          <p className="text-gray-700">
+                            #{index + 1}: {item}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4 max-w-md mx-auto">
+                  <label
+                    htmlFor="haytham1"
+                    className="block text-sm text-center font-medium text-gray-700"
+                  >
+                    Three things I&apos;m grateful for
+                  </label>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="haytham1"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      #1{" "}
+                    </label>
+                    <GratitudeInput
+                      id="haytham1"
+                      placeholder="Enter gratitude #1"
+                      colorScheme="blue"
+                      onSubmit={(value) => {
+                        haythamGratitude.current[0] = value;
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="haytham2"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      #2
+                    </label>
+                    <GratitudeInput
+                      id="haytham2"
+                      placeholder="Enter gratitude #2"
+                      colorScheme="blue"
+                      onSubmit={(value) => {
+                        haythamGratitude.current[1] = value;
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="haytham3"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      #3
+                    </label>
+                    <GratitudeInput
+                      id="haytham3"
+                      placeholder="Enter gratitude #3"
+                      colorScheme="blue"
+                      onSubmit={(value) => {
+                        haythamGratitude.current[2] = value;
+                      }}
+                    />
+                  </div>
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={() => {
+                        alert(JSON.stringify(haythamGratitude.current));
+                        handleSubmit("haytham", haythamGratitude.current);
+                      }}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-md shadow-sm transition-colors"
+                    >
+                      Submit Gratitude
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+            {/* Molly's Side */}
+            <div className="flex-1 bg-pink-100 p-8">
+              <div className="flex justify-center items-center gap-4 mb-8">
+                <h1 className="text-4xl font-bold text-center text-gray-700">
+                  Molly 🌸
+                </h1>
+                <div className="bg-pink-200 px-3 py-1 rounded-full">
+                  <span className="text-sm font-medium">
+                    🔥 {mollyStreak} day streak
+                  </span>
+                </div>
+              </div>
+              {mollyTodayGratitude.length > 0 ? (
+                <div className="space-y-4 max-w-md mx-auto">
+                  <h3 className="text-center text-gray-700 font-medium">
+                    Today&apos;s Gratitude (Click to Edit)
+                  </h3>
+                  {mollyTodayGratitude.map((item: string, index: number) => (
+                    <div key={index}>
+                      {editingMolly === index ? (
+                        <div className="space-y-2">
+                          <GratitudeInput
+                            id={`molly-edit-${index}`}
+                            placeholder={`Edit gratitude #${index + 1}`}
+                            colorScheme="pink"
+                            defaultValue={item}
+                            onSubmit={(value) => {
+                              const newGratitude = [...mollyTodayGratitude];
+                              newGratitude[index] = value;
+                              handleSubmit("molly", newGratitude);
+                              setEditingMolly(null);
+                              setMollyTodayGratitude(newGratitude);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="p-4 bg-pink-50 rounded-lg cursor-pointer hover:bg-pink-100 transition-colors"
+                          onClick={() => setEditingMolly(index)}
+                        >
+                          <p className="text-gray-700">
+                            #{index + 1}: {item}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4 max-w-md mx-auto">
+                  <label
+                    htmlFor="molly1"
+                    className="block text-sm text-center font-medium text-gray-700"
+                  >
+                    Three things I&apos;m grateful for
+                  </label>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="molly1"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      #1
+                    </label>
+                    <GratitudeInput
+                      id="molly1"
+                      placeholder="Enter gratitude #1"
+                      colorScheme="pink"
+                      onSubmit={(value) => {
+                        mollyGratitude.current[0] = value;
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="molly2"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      #2
+                    </label>
+                    <GratitudeInput
+                      id="molly2"
+                      placeholder="Enter gratitude #2"
+                      colorScheme="pink"
+                      onSubmit={(value) => {
+                        mollyGratitude.current[1] = value;
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="molly3"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      #3
+                    </label>
+                    <GratitudeInput
+                      id="molly3"
+                      placeholder="Enter gratitude #3"
+                      colorScheme="pink"
+                      onSubmit={(value) => {
+                        mollyGratitude.current[2] = value;
+                      }}
+                    />
+                  </div>
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={() =>
+                        handleSubmit("molly", mollyGratitude.current)
+                      }
+                      className="bg-pink-500 hover:bg-pink-600 text-white font-medium py-2 px-6 rounded-md shadow-sm transition-colors"
+                    >
+                      Submit Gratitude
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      )}
+    </>
+  );
 }
