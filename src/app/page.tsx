@@ -11,14 +11,14 @@ import { databases } from "./appwrite/config";
 export default function Home() {
   const [isPinVerified, setIsPinVerified] = useState(false);
   const [haythamStreak, setHaythamStreak] = useState(0);
-  const [mollyStreak, setMollyStreak] = useState(0);
+  const [tasneemStreak, setTasneemStreak] = useState(0);
   const [editingHaytham, setEditingHaytham] = useState<number | null>(null);
-  const [editingMolly, setEditingMolly] = useState<number | null>(null);
+  const [editingTasneem, setEditingTasneem] = useState<number | null>(null);
   const today = new Date();
   const [haythamTodayGratitude, setHaythamTodayGratitude] = useState<any[]>([]);
-  const [mollyTodayGratitude, setMollyTodayGratitude] = useState<any[]>([]);
+  const [tasneemTodayGratitude, setTasneemTodayGratitude] = useState<any[]>([]);
   const haythamGratitude = useRef<any[]>([]);
-  const mollyGratitude = useRef<any[]>([]);
+  const tasneemGratitude = useRef<any[]>([]);
   const formattedDate = today.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -44,25 +44,26 @@ export default function Home() {
         const gratitudeMToday = await databases.listDocuments(
           "677aa240003aea2c9bca",
           "677aa24a000d3fd012f6",
-          [Query.equal("date", formattedDate), Query.equal("user", "molly")]
+          [Query.equal("date", formattedDate), Query.equal("user", "tasneem")]
         );
         setHaythamStreak(
           gratitude.documents.filter((doc: any) => doc.user === "haytham")
             .length
         );
-        setMollyStreak(
-          gratitude.documents.filter((doc: any) => doc.user === "molly").length
+        setTasneemStreak(
+          gratitude.documents.filter((doc: any) => doc.user === "tasneem")
+            .length
         );
 
         setHaythamTodayGratitude(gratitudeHToday.documents[0].grateful);
-        setMollyTodayGratitude(gratitudeMToday.documents[0].grateful);
+        setTasneemTodayGratitude(gratitudeMToday.documents[0].grateful);
       };
       retrieveData();
     }
   }, [isPinVerified, formattedDate]);
 
   const handleSubmit = async (
-    person: "haytham" | "molly",
+    person: "haytham" | "tasneem",
     gratitude: any[]
   ) => {
     if (person === "haytham") {
@@ -104,7 +105,7 @@ export default function Home() {
       const gratitudeMToday = await databases.listDocuments(
         "677aa240003aea2c9bca",
         "677aa24a000d3fd012f6",
-        [Query.equal("date", formattedDate), Query.equal("user", "molly")]
+        [Query.equal("date", formattedDate), Query.equal("user", "tasneem")]
       );
       if (gratitudeMToday.documents.length > 0) {
         await databases.updateDocument(
@@ -119,7 +120,7 @@ export default function Home() {
           "677aa24a000d3fd012f6",
           gratitudeId,
           {
-            user: "molly",
+            user: "tasneem",
             date: formattedDate,
             id: gratitudeId,
             grateful: gratitude,
@@ -127,7 +128,7 @@ export default function Home() {
         );
       }
       setShowConfetti(true);
-      toast.success("Molly's gratitude journal entry recorded! 🌸", {
+      toast.success("Tasneem's gratitude journal entry recorded! 🌸", {
         duration: 3000,
       });
       setTimeout(() => setShowConfetti(false), 5000);
@@ -266,45 +267,45 @@ export default function Home() {
               )}
             </div>
 
-            {/* Molly's Side */}
+            {/* Tasneem's Side */}
             <div className="flex-1 bg-pink-100 p-8">
               <div className="flex justify-center items-center gap-4 mb-8">
                 <h1 className="text-4xl font-bold text-center text-gray-700">
-                  Molly 🌸
+                  Tasneem 🌸
                 </h1>
                 <div className="bg-pink-200 px-3 py-1 rounded-full">
                   <span className="text-sm font-medium">
-                    🔥 {mollyStreak} day streak
+                    🔥 {tasneemStreak} day streak
                   </span>
                 </div>
               </div>
-              {mollyTodayGratitude.length > 0 ? (
+              {tasneemTodayGratitude.length > 0 ? (
                 <div className="space-y-4 max-w-md mx-auto">
                   <h3 className="text-center text-gray-700 font-medium">
                     Today&apos;s Gratitude (Click to Edit)
                   </h3>
-                  {mollyTodayGratitude.map((item: string, index: number) => (
+                  {tasneemTodayGratitude.map((item: string, index: number) => (
                     <div key={index}>
-                      {editingMolly === index ? (
+                      {editingTasneem === index ? (
                         <div className="space-y-2">
                           <GratitudeInput
-                            id={`molly-edit-${index}`}
+                            id={`tasneem-edit-${index}`}
                             placeholder={`Edit gratitude #${index + 1}`}
                             colorScheme="pink"
                             defaultValue={item}
                             onSubmit={(value) => {
-                              const newGratitude = [...mollyTodayGratitude];
+                              const newGratitude = [...tasneemTodayGratitude];
                               newGratitude[index] = value;
-                              handleSubmit("molly", newGratitude);
-                              setEditingMolly(null);
-                              setMollyTodayGratitude(newGratitude);
+                              handleSubmit("tasneem", newGratitude);
+                              setEditingTasneem(null);
+                              setTasneemTodayGratitude(newGratitude);
                             }}
                           />
                         </div>
                       ) : (
                         <div
                           className="p-4 bg-pink-50 rounded-lg cursor-pointer hover:bg-pink-100 transition-colors"
-                          onClick={() => setEditingMolly(index)}
+                          onClick={() => setEditingTasneem(index)}
                         >
                           <p className="text-gray-700">
                             #{index + 1}: {item}
@@ -317,63 +318,63 @@ export default function Home() {
               ) : (
                 <div className="space-y-4 max-w-md mx-auto">
                   <label
-                    htmlFor="molly1"
+                    htmlFor="tasneem1"
                     className="block text-sm text-center font-medium text-gray-700"
                   >
                     Three things I&apos;m grateful for
                   </label>
                   <div className="space-y-2">
                     <label
-                      htmlFor="molly1"
+                      htmlFor="tasneem1"
                       className="block text-sm font-medium text-gray-700"
                     >
                       #1
                     </label>
                     <GratitudeInput
-                      id="molly1"
+                      id="tasneem1"
                       placeholder="Enter gratitude #1"
                       colorScheme="pink"
                       onSubmit={(value) => {
-                        mollyGratitude.current[0] = value;
+                        tasneemGratitude.current[0] = value;
                       }}
                     />
                   </div>
                   <div className="space-y-2">
                     <label
-                      htmlFor="molly2"
+                      htmlFor="tasneem2"
                       className="block text-sm font-medium text-gray-700"
                     >
                       #2
                     </label>
                     <GratitudeInput
-                      id="molly2"
+                      id="tasneem2"
                       placeholder="Enter gratitude #2"
                       colorScheme="pink"
                       onSubmit={(value) => {
-                        mollyGratitude.current[1] = value;
+                        tasneemGratitude.current[1] = value;
                       }}
                     />
                   </div>
                   <div className="space-y-2">
                     <label
-                      htmlFor="molly3"
+                      htmlFor="tasneem3"
                       className="block text-sm font-medium text-gray-700"
                     >
                       #3
                     </label>
                     <GratitudeInput
-                      id="molly3"
+                      id="tasneem3"
                       placeholder="Enter gratitude #3"
                       colorScheme="pink"
                       onSubmit={(value) => {
-                        mollyGratitude.current[2] = value;
+                        tasneemGratitude.current[2] = value;
                       }}
                     />
                   </div>
                   <div className="mt-6 flex justify-center">
                     <button
                       onClick={() =>
-                        handleSubmit("molly", mollyGratitude.current)
+                        handleSubmit("tasneem", tasneemGratitude.current)
                       }
                       className="bg-pink-500 hover:bg-pink-600 text-white font-medium py-2 px-6 rounded-md shadow-sm transition-colors"
                     >
