@@ -255,7 +255,6 @@ export default function Home() {
                   <div className="mt-6 flex justify-center">
                     <button
                       onClick={() => {
-                        alert(JSON.stringify(haythamGratitude.current));
                         handleSubmit("haytham2", haythamGratitude.current);
                       }}
                       className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-md shadow-sm transition-colors"
