@@ -41,11 +41,12 @@ export default function Home() {
           [Query.equal("date", formattedDate), Query.equal("user", "haytham2")]
         );
 
-        const gratitudeMToday = await databases.listDocuments(
+        const gratitudeTToday = await databases.listDocuments(
           "677aa240003aea2c9bca",
           "677aa24a000d3fd012f6",
           [Query.equal("date", formattedDate), Query.equal("user", "tasneem")]
         );
+
         setHaythamStreak(
           gratitude.documents.filter((doc: any) => doc.user === "haytham2")
             .length
@@ -55,12 +56,21 @@ export default function Home() {
             .length
         );
 
-        setHaythamTodayGratitude(gratitudeHToday.documents[0].grateful);
-        setTasneemTodayGratitude(gratitudeMToday.documents[0].grateful);
+        if (gratitudeHToday.documents.length > 0) {
+          setHaythamTodayGratitude(gratitudeHToday.documents[0].grateful);
+        }
+        if (gratitudeTToday.documents.length > 0) {
+          setTasneemTodayGratitude(gratitudeTToday.documents[0].grateful);
+        }
       };
       retrieveData();
     }
-  }, [isPinVerified, formattedDate]);
+  }, [
+    isPinVerified,
+    formattedDate,
+    haythamTodayGratitude,
+    tasneemTodayGratitude,
+  ]);
 
   const handleSubmit = async (
     person: "haytham2" | "tasneem",
@@ -102,16 +112,16 @@ export default function Home() {
     } else {
       const id = ID.unique();
       const gratitudeId = id;
-      const gratitudeMToday = await databases.listDocuments(
+      const gratitudeTToday = await databases.listDocuments(
         "677aa240003aea2c9bca",
         "677aa24a000d3fd012f6",
         [Query.equal("date", formattedDate), Query.equal("user", "tasneem")]
       );
-      if (gratitudeMToday.documents.length > 0) {
+      if (gratitudeTToday.documents.length > 0) {
         await databases.updateDocument(
           "677aa240003aea2c9bca",
           "677aa24a000d3fd012f6",
-          gratitudeMToday.documents[0].id,
+          gratitudeTToday.documents[0].id,
           { grateful: gratitude }
         );
       } else {
