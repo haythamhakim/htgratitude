@@ -2,6 +2,12 @@
 
 import GratitudeInput from "@/components/gratitudeInput";
 import PinEntry from "@/components/pinVerification";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ID, Query } from "appwrite";
 import { useEffect, useRef, useState } from "react";
 import ReactConfetti from "react-confetti";
@@ -14,11 +20,19 @@ export default function Home() {
   const [tasneemStreak, setTasneemStreak] = useState(0);
   const [editingHaytham, setEditingHaytham] = useState<number | null>(null);
   const [editingTasneem, setEditingTasneem] = useState<number | null>(null);
-  const today = new Date();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const today = selectedDate;
   const [haythamTodayGratitude, setHaythamTodayGratitude] = useState<any[]>([]);
   const [tasneemTodayGratitude, setTasneemTodayGratitude] = useState<any[]>([]);
   const haythamGratitude = useRef<any[]>([]);
   const tasneemGratitude = useRef<any[]>([]);
+  const entries = useRef<
+    {
+      date: string;
+      haytham: string[];
+      tasneem: string[];
+    }[]
+  >([]);
   const formattedDate = today.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -35,10 +49,32 @@ export default function Home() {
           "677aa24a000d3fd012f6"
         );
 
+        entries.current = gratitude.documents.reduce((acc: any[], doc: any) => {
+          const existingEntry = acc.find((entry) => entry.date === doc.date);
+
+          if (existingEntry) {
+            // Update existing entry
+            if (doc.user === "haytham") {
+              existingEntry.haytham = doc.grateful;
+            } else if (doc.user === "tasneem") {
+              existingEntry.tasneem = doc.grateful;
+            }
+          } else {
+            // Create new entry
+            acc.push({
+              date: doc.date,
+              haytham: doc.user === "haytham" ? doc.grateful : [],
+              tasneem: doc.user === "tasneem" ? doc.grateful : [],
+            });
+          }
+
+          return acc;
+        }, []);
+
         const gratitudeHToday = await databases.listDocuments(
           "677aa240003aea2c9bca",
           "677aa24a000d3fd012f6",
-          [Query.equal("date", formattedDate), Query.equal("user", "haytham2")]
+          [Query.equal("date", formattedDate), Query.equal("user", "haytham")]
         );
 
         const gratitudeTToday = await databases.listDocuments(
@@ -48,7 +84,7 @@ export default function Home() {
         );
 
         setHaythamStreak(
-          gratitude.documents.filter((doc: any) => doc.user === "haytham2")
+          gratitude.documents.filter((doc: any) => doc.user === "haytham")
             .length
         );
         setTasneemStreak(
@@ -73,16 +109,16 @@ export default function Home() {
   ]);
 
   const handleSubmit = async (
-    person: "haytham2" | "tasneem",
+    person: "haytham" | "tasneem",
     gratitude: any[]
   ) => {
-    if (person === "haytham2") {
+    if (person === "haytham") {
       const id = ID.unique();
       const gratitudeId = id;
       const gratitudeHToday = await databases.listDocuments(
         "677aa240003aea2c9bca",
         "677aa24a000d3fd012f6",
-        [Query.equal("date", formattedDate), Query.equal("user", "haytham2")]
+        [Query.equal("date", formattedDate), Query.equal("user", "haytham")]
       );
       if (gratitudeHToday.documents.length > 0) {
         await databases.updateDocument(
@@ -97,7 +133,7 @@ export default function Home() {
           "677aa24a000d3fd012f6",
           gratitudeId,
           {
-            user: "haytham2",
+            user: "haytham",
             date: formattedDate,
             id: gratitudeId,
             grateful: gratitude,
@@ -145,6 +181,45 @@ export default function Home() {
     }
   };
 
+  const onDaySelect = async (date: Date) => {
+    setSelectedDate(date);
+    const formattedSelectedDate = date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const gratitudeHSelected = await databases.listDocuments(
+      "677aa240003aea2c9bca",
+      "677aa24a000d3fd012f6",
+      [
+        Query.equal("date", formattedSelectedDate),
+        Query.equal("user", "haytham"),
+      ]
+    );
+
+    const gratitudeTSelected = await databases.listDocuments(
+      "677aa240003aea2c9bca",
+      "677aa24a000d3fd012f6",
+      [
+        Query.equal("date", formattedSelectedDate),
+        Query.equal("user", "tasneem"),
+      ]
+    );
+
+    setHaythamTodayGratitude(
+      gratitudeHSelected.documents.length > 0
+        ? gratitudeHSelected.documents[0].grateful
+        : []
+    );
+    setTasneemTodayGratitude(
+      gratitudeTSelected.documents.length > 0
+        ? gratitudeTSelected.documents[0].grateful
+        : []
+    );
+  };
+
   return (
     <>
       {showConfetti && <ReactConfetti recycle={false} numberOfPieces={500} />}
@@ -152,11 +227,24 @@ export default function Home() {
       {!isPinVerified && <PinEntry onVerify={() => setIsPinVerified(true)} />}
       {isPinVerified && (
         <main className="min-h-screen flex flex-col">
-          <div className="w-full bg-gray-50 p-4 text-center border-b">
-            <h2 className="text-2xl font-semibold text-gray-700">
-              {formattedDate}
-            </h2>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <div className="w-full bg-gray-50 p-4 text-center border-b">
+                <h2 className="text-2xl font-semibold text-gray-700 cursor-pointer">
+                  {formattedDate}
+                </h2>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent>
+              <Calendar
+                entries={entries.current}
+                onDayClick={(date) => {
+                  onDaySelect(date);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+
           <div className="flex flex-1 flex-col lg:flex-row">
             {/* Haytham's Side */}
             <div className="flex-1 bg-blue-100 p-8">
@@ -187,7 +275,7 @@ export default function Home() {
                             onSubmit={(value) => {
                               const newGratitude = [...haythamTodayGratitude];
                               newGratitude[index] = value;
-                              handleSubmit("haytham2", newGratitude);
+                              handleSubmit("haytham", newGratitude);
                               setEditingHaytham(null);
                               setHaythamTodayGratitude(newGratitude);
                             }}
@@ -232,13 +320,13 @@ export default function Home() {
                   </div>
                   <div className="space-y-2">
                     <label
-                      htmlFor="haytham2"
+                      htmlFor="haytham"
                       className="block text-sm font-medium text-gray-700"
                     >
                       #2
                     </label>
                     <GratitudeInput
-                      id="haytham2"
+                      id="haytham"
                       placeholder="Enter gratitude #2"
                       colorScheme="blue"
                       onSubmit={(value) => {
@@ -265,7 +353,7 @@ export default function Home() {
                   <div className="mt-6 flex justify-center">
                     <button
                       onClick={() => {
-                        handleSubmit("haytham2", haythamGratitude.current);
+                        handleSubmit("haytham", haythamGratitude.current);
                       }}
                       className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-md shadow-sm transition-colors"
                     >
